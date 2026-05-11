@@ -28,7 +28,7 @@
     "lint:fix": "prettier --write . && eslint . --fix --ignore-pattern \"AI Tag Suggester for Zotero.js\"",
     "release": "zotero-plugin release",
     "test": "npm run test:unit",
-    "test:unit": "mocha --require jiti/register \"test/responseParser.test.ts\" \"test/tagList.test.ts\"",
+    "test:unit": "mocha --require jiti/register \"test/responseParser.test.ts\" \"test/tagList.test.ts\" \"test/workflow.test.ts\"",
     "test:zotero": "zotero-plugin test",
     "update-deps": "npm update --save"
   },
