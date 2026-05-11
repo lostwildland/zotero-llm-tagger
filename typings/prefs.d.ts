@@ -7,8 +7,26 @@
 declare namespace _ZoteroTypes {
   interface Prefs {
     PluginPrefsMap: {
-      "enable": boolean;
-      "input": string;
+      "provider": string;
+      "baseURL": string;
+      "apiKey": string;
+      "model": string;
+      "azureEndpoint": string;
+      "azureDeployment": string;
+      "azureApiVersion": string;
+      "tagPolicy": string;
+      "applyMode": string;
+      "customTagList": string;
+      "maxSuggestedTags": number;
+      "temperature": string;
+      "maxTokens": number;
+      "includeAttachmentText": boolean;
+      "maxAttachmentChars": number;
+      "maxConcurrency": number;
+      "minRequestIntervalMs": number;
+      "maxRetries": number;
+      "systemPrompt": string;
+      "userPrompt": string;
     };
   }
 }

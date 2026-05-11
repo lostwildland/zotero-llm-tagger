@@ -1,2 +1,29 @@
-pref("enable", true);
-pref("input", "This is input");
+pref("provider", "openai");
+pref("baseURL", "https://api.openai.com/v1");
+pref("apiKey", "");
+pref("model", "gpt-4o-mini");
+pref("azureEndpoint", "");
+pref("azureDeployment", "gpt-4.1-mini");
+pref("azureApiVersion", "2024-12-01-preview");
+
+pref("tagPolicy", "existing_only");
+pref("applyMode", "preview_then_apply");
+pref("customTagList", "");
+pref("maxSuggestedTags", 8);
+pref("temperature", "0.1");
+pref("maxTokens", 1000);
+pref("includeAttachmentText", false);
+pref("maxAttachmentChars", 6000);
+
+pref("maxConcurrency", 3);
+pref("minRequestIntervalMs", 800);
+pref("maxRetries", 3);
+
+pref(
+  "systemPrompt",
+  "You are a research librarian helping categorize academic documents. Return strict JSON only.",
+);
+pref(
+  "userPrompt",
+  "Analyze the provided document context and suggest concise, accurate tags.",
+);

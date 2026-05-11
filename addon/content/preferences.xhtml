@@ -5,25 +5,324 @@
   onload="Zotero.__addonInstance__.hooks.onPrefsEvent('load', { window })"
 >
   <label><html:h2 data-l10n-id="pref-title"></html:h2></label>
-  <checkbox
-    id="zotero-prefpane-__addonRef__-enable"
-    preference="enable"
-    data-l10n-id="pref-enable"
-  />
-  <hbox>
+
+  <vbox>
+    <label><html:h3 data-l10n-id="pref-provider-title"></html:h3></label>
+    <hbox align="center">
+      <html:label
+        for="zotero-prefpane-__addonRef__-provider"
+        data-l10n-id="pref-provider-type"
+      ></html:label>
+      <html:select
+        id="zotero-prefpane-__addonRef__-provider"
+        preference="provider"
+      >
+        <html:option value="openai">OpenAI</html:option>
+        <html:option value="azure">Azure OpenAI</html:option>
+        <html:option value="compatible">OpenAI-compatible</html:option>
+      </html:select>
+    </hbox>
+
+    <vbox id="__addonRef__-provider-openai">
+      <hbox align="center">
+        <html:label
+          for="zotero-prefpane-__addonRef__-baseURL"
+          data-l10n-id="pref-base-url"
+        ></html:label>
+        <html:input
+          type="text"
+          id="zotero-prefpane-__addonRef__-baseURL"
+          preference="baseURL"
+        ></html:input>
+      </hbox>
+      <hbox align="center">
+        <html:label
+          for="zotero-prefpane-__addonRef__-model"
+          data-l10n-id="pref-model"
+        ></html:label>
+        <html:input
+          type="text"
+          id="zotero-prefpane-__addonRef__-model"
+          preference="model"
+        ></html:input>
+      </hbox>
+    </vbox>
+
+    <vbox id="__addonRef__-provider-azure">
+      <hbox align="center">
+        <html:label
+          for="zotero-prefpane-__addonRef__-azureEndpoint"
+          data-l10n-id="pref-azure-endpoint"
+        ></html:label>
+        <html:input
+          type="text"
+          id="zotero-prefpane-__addonRef__-azureEndpoint"
+          preference="azureEndpoint"
+        ></html:input>
+      </hbox>
+      <hbox align="center">
+        <html:label
+          for="zotero-prefpane-__addonRef__-azureDeployment"
+          data-l10n-id="pref-azure-deployment"
+        ></html:label>
+        <html:input
+          type="text"
+          id="zotero-prefpane-__addonRef__-azureDeployment"
+          preference="azureDeployment"
+        ></html:input>
+      </hbox>
+      <hbox align="center">
+        <html:label
+          for="zotero-prefpane-__addonRef__-azureApiVersion"
+          data-l10n-id="pref-azure-version"
+        ></html:label>
+        <html:input
+          type="text"
+          id="zotero-prefpane-__addonRef__-azureApiVersion"
+          preference="azureApiVersion"
+        ></html:input>
+      </hbox>
+    </vbox>
+
+    <hbox align="center">
+      <html:label
+        for="zotero-prefpane-__addonRef__-apiKey"
+        data-l10n-id="pref-api-key"
+      ></html:label>
+      <html:input
+        type="password"
+        id="zotero-prefpane-__addonRef__-apiKey"
+        preference="apiKey"
+      ></html:input>
+    </hbox>
+
+    <hbox align="center">
+      <html:button
+        id="__addonRef__-test-connection"
+        type="button"
+        data-l10n-id="pref-test-connection"
+      ></html:button>
+      <description data-l10n-id="pref-test-connection-help"></description>
+    </hbox>
+  </vbox>
+
+  <separator class="thin" />
+
+  <vbox>
+    <label><html:h3 data-l10n-id="pref-tagging-title"></html:h3></label>
+    <hbox align="center">
+      <html:label
+        for="zotero-prefpane-__addonRef__-tagPolicy"
+        data-l10n-id="pref-tag-policy"
+      ></html:label>
+      <html:select
+        id="zotero-prefpane-__addonRef__-tagPolicy"
+        preference="tagPolicy"
+      >
+        <html:option
+          value="existing_only"
+          data-l10n-id="pref-tag-policy-existing"
+        ></html:option>
+        <html:option
+          value="allow_new"
+          data-l10n-id="pref-tag-policy-new"
+        ></html:option>
+        <html:option
+          value="custom_list"
+          data-l10n-id="pref-tag-policy-custom"
+        ></html:option>
+      </html:select>
+    </hbox>
+
+    <hbox id="__addonRef__-custom-tag-list-row" align="start">
+      <html:label
+        for="zotero-prefpane-__addonRef__-customTagList"
+        data-l10n-id="pref-custom-tag-list"
+      ></html:label>
+      <vbox flex="1">
+        <html:textarea
+          id="zotero-prefpane-__addonRef__-customTagList"
+          preference="customTagList"
+          rows="3"
+          style="width: 100%"
+        ></html:textarea>
+        <description data-l10n-id="pref-custom-tag-list-help"></description>
+      </vbox>
+    </hbox>
+
+    <hbox align="center">
+      <html:label
+        for="zotero-prefpane-__addonRef__-applyMode"
+        data-l10n-id="pref-apply-mode"
+      ></html:label>
+      <html:select
+        id="zotero-prefpane-__addonRef__-applyMode"
+        preference="applyMode"
+      >
+        <html:option
+          value="auto_apply"
+          data-l10n-id="pref-apply-mode-auto"
+        ></html:option>
+        <html:option
+          value="preview_then_apply"
+          data-l10n-id="pref-apply-mode-preview"
+        ></html:option>
+      </html:select>
+    </hbox>
+
+    <hbox align="center">
+      <html:label
+        for="zotero-prefpane-__addonRef__-maxSuggestedTags"
+        data-l10n-id="pref-max-tags"
+      ></html:label>
+      <html:input
+        type="number"
+        min="1"
+        max="32"
+        id="zotero-prefpane-__addonRef__-maxSuggestedTags"
+        preference="maxSuggestedTags"
+      ></html:input>
+    </hbox>
+
+    <hbox align="center">
+      <html:label
+        for="zotero-prefpane-__addonRef__-temperature"
+        data-l10n-id="pref-temperature"
+      ></html:label>
+      <html:input
+        type="number"
+        step="0.1"
+        min="0"
+        max="2"
+        id="zotero-prefpane-__addonRef__-temperature"
+        preference="temperature"
+      ></html:input>
+    </hbox>
+
+    <hbox align="center">
+      <html:label
+        for="zotero-prefpane-__addonRef__-maxTokens"
+        data-l10n-id="pref-max-tokens"
+      ></html:label>
+      <html:input
+        type="number"
+        min="64"
+        max="4096"
+        id="zotero-prefpane-__addonRef__-maxTokens"
+        preference="maxTokens"
+      ></html:input>
+    </hbox>
+  </vbox>
+
+  <separator class="thin" />
+
+  <vbox>
+    <label><html:h3 data-l10n-id="pref-context-title"></html:h3></label>
+
+    <checkbox
+      id="zotero-prefpane-__addonRef__-includeAttachmentText"
+      preference="includeAttachmentText"
+      data-l10n-id="pref-include-attachment-text"
+    />
+    <description data-l10n-id="pref-include-attachment-text-help"></description>
+
+    <hbox id="__addonRef__-max-attachment-chars-row" align="center">
+      <html:label
+        for="zotero-prefpane-__addonRef__-maxAttachmentChars"
+        data-l10n-id="pref-max-attachment-chars"
+      ></html:label>
+      <html:input
+        type="number"
+        min="0"
+        max="50000"
+        id="zotero-prefpane-__addonRef__-maxAttachmentChars"
+        preference="maxAttachmentChars"
+      ></html:input>
+    </hbox>
+  </vbox>
+
+  <separator class="thin" />
+
+  <vbox>
+    <label><html:h3 data-l10n-id="pref-queue-title"></html:h3></label>
+
+    <hbox align="center">
+      <html:label
+        for="zotero-prefpane-__addonRef__-maxConcurrency"
+        data-l10n-id="pref-concurrency"
+      ></html:label>
+      <html:input
+        type="number"
+        min="1"
+        max="16"
+        id="zotero-prefpane-__addonRef__-maxConcurrency"
+        preference="maxConcurrency"
+      ></html:input>
+    </hbox>
+
+    <hbox align="center">
+      <html:label
+        for="zotero-prefpane-__addonRef__-minRequestIntervalMs"
+        data-l10n-id="pref-interval"
+      ></html:label>
+      <html:input
+        type="number"
+        min="0"
+        max="30000"
+        id="zotero-prefpane-__addonRef__-minRequestIntervalMs"
+        preference="minRequestIntervalMs"
+      ></html:input>
+    </hbox>
+
+    <hbox align="center">
+      <html:label
+        for="zotero-prefpane-__addonRef__-maxRetries"
+        data-l10n-id="pref-retries"
+      ></html:label>
+      <html:input
+        type="number"
+        min="0"
+        max="8"
+        id="zotero-prefpane-__addonRef__-maxRetries"
+        preference="maxRetries"
+      ></html:input>
+    </hbox>
+  </vbox>
+
+  <separator class="thin" />
+
+  <vbox>
+    <label><html:h3 data-l10n-id="pref-prompt-title"></html:h3></label>
+
     <html:label
-      for="zotero-prefpane-__addonRef__-input"
-      data-l10n-id="pref-input"
+      for="zotero-prefpane-__addonRef__-systemPrompt"
+      data-l10n-id="pref-system-prompt"
     ></html:label>
-    <html:input
-      type="text"
-      id="zotero-prefpane-__addonRef__-input"
-      preference="input"
-    ></html:input>
-  </hbox>
-  <hbox class="virtualized-table-container" flex="1" height="300px">
-    <html:div id="__addonRef__-table-container" />
-  </hbox>
+    <html:textarea
+      id="zotero-prefpane-__addonRef__-systemPrompt"
+      preference="systemPrompt"
+      rows="4"
+      style="width: 100%"
+    ></html:textarea>
+
+    <html:label
+      for="zotero-prefpane-__addonRef__-userPrompt"
+      data-l10n-id="pref-user-prompt"
+    ></html:label>
+    <html:textarea
+      id="zotero-prefpane-__addonRef__-userPrompt"
+      preference="userPrompt"
+      rows="4"
+      style="width: 100%"
+    ></html:textarea>
+
+    <html:button
+      id="__addonRef__-restore-prompts"
+      type="button"
+      data-l10n-id="pref-restore-prompts"
+    ></html:button>
+    <description data-l10n-id="pref-prompt-help"></description>
+  </vbox>
 </groupbox>
 <vbox>
   <html:label

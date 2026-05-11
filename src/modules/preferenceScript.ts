@@ -1,131 +1,247 @@
 import { config } from "../../package.json";
+import { getRuntimeConfig, validateRuntimeConfig } from "../core/config";
+import { DEFAULT_SYSTEM_PROMPT, DEFAULT_USER_PROMPT } from "../core/defaults";
+import { buildChatMessages } from "../core/promptBuilder";
+import { callProviderChat } from "../core/providerClient";
+import { parseSuggestionResponse } from "../core/responseParser";
 import { getString } from "../utils/locale";
+import { getPref, setPref } from "../utils/prefs";
 
-export async function registerPrefsScripts(_window: Window) {
-  // This function is called when the prefs window is opened
-  // See addon/content/preferences.xhtml onpaneload
-  if (!addon.data.prefs) {
-    addon.data.prefs = {
-      window: _window,
-      columns: [
-        {
-          dataKey: "title",
-          label: getString("prefs-table-title"),
-          fixedWidth: true,
-          width: 100,
-        },
-        {
-          dataKey: "detail",
-          label: getString("prefs-table-detail"),
-        },
-      ],
-      rows: [
-        {
-          title: "Orange",
-          detail: "It's juicy",
-        },
-        {
-          title: "Banana",
-          detail: "It's sweet",
-        },
-        {
-          title: "Apple",
-          detail: "I mean the fruit APPLE",
-        },
-      ],
-    };
+const boundWindows = new WeakSet<Window>();
+type CheckedElement = HTMLElement & { checked?: boolean };
+
+export function registerPreferencePane() {
+  Zotero.PreferencePanes.register({
+    pluginID: addon.data.config.addonID,
+    src: `${rootURI}content/preferences.xhtml`,
+    label: getString("prefs-title"),
+    image: `chrome://${addon.data.config.addonRef}/content/icons/logo.svg`,
+  });
+}
+
+export async function registerPrefsScripts(window: Window) {
+  addon.data.prefs = {
+    window,
+  };
+
+  if (!boundWindows.has(window)) {
+    bindPrefEvents(window);
+    boundWindows.add(window);
   } else {
-    addon.data.prefs.window = _window;
+    updateProviderSectionVisibility(window);
+    updateTagPolicySectionVisibility(window);
+    updateContextSectionVisibility(window);
   }
-  updatePrefsUI();
-  bindPrefEvents();
 }
 
-async function updatePrefsUI() {
-  // You can initialize some UI elements on prefs window
-  // with addon.data.prefs.window.document
-  // Or bind some events to the elements
-  const renderLock = ztoolkit.getGlobal("Zotero").Promise.defer();
-  if (addon.data.prefs?.window == undefined) return;
-  const tableHelper = new ztoolkit.VirtualizedTable(addon.data.prefs?.window)
-    .setContainerId(`${config.addonRef}-table-container`)
-    .setProp({
-      id: `${config.addonRef}-prefs-table`,
-      // Do not use setLocale, as it modifies the Zotero.Intl.strings
-      // Set locales directly to columns
-      columns: addon.data.prefs?.columns,
-      showHeader: true,
-      multiSelect: true,
-      staticColumns: true,
-      disableFontSizeScaling: true,
-    })
-    .setProp("getRowCount", () => addon.data.prefs?.rows.length || 0)
-    .setProp(
-      "getRowData",
-      (index) =>
-        addon.data.prefs?.rows[index] || {
-          title: "no data",
-          detail: "no data",
-        },
-    )
-    // Show a progress window when selection changes
-    .setProp("onSelectionChange", (selection) => {
-      new ztoolkit.ProgressWindow(config.addonName)
-        .createLine({
-          text: `Selected line: ${addon.data.prefs?.rows
-            .filter((v, i) => selection.isSelected(i))
-            .map((row) => row.title)
-            .join(",")}`,
-          progress: 100,
-        })
-        .show();
-    })
-    // When pressing delete, delete selected line and refresh table.
-    // Returning false to prevent default event.
-    .setProp("onKeyDown", (event: KeyboardEvent) => {
-      if (event.key == "Delete" || (Zotero.isMac && event.key == "Backspace")) {
-        addon.data.prefs!.rows =
-          addon.data.prefs?.rows.filter(
-            (v, i) => !tableHelper.treeInstance.selection.isSelected(i),
-          ) || [];
-        tableHelper.render();
-        return false;
+function bindPrefEvents(window: Window) {
+  const doc = window.document;
+  const providerInput = doc.querySelector(
+    `#zotero-prefpane-${config.addonRef}-provider`,
+  ) as HTMLSelectElement | null;
+  const tagPolicyInput = doc.querySelector(
+    `#zotero-prefpane-${config.addonRef}-tagPolicy`,
+  ) as HTMLSelectElement | null;
+  const includeAttachmentTextInput = doc.querySelector(
+    `#zotero-prefpane-${config.addonRef}-includeAttachmentText`,
+  ) as CheckedElement | null;
+
+  providerInput?.addEventListener("change", () => {
+    updateProviderSectionVisibility(window);
+  });
+  tagPolicyInput?.addEventListener("change", () => {
+    updateTagPolicySectionVisibility(window);
+  });
+  includeAttachmentTextInput?.addEventListener("change", () => {
+    updateContextSectionVisibility(window);
+  });
+  includeAttachmentTextInput?.addEventListener("command", () => {
+    updateContextSectionVisibility(window);
+  });
+
+  doc
+    .querySelector(`#${config.addonRef}-test-connection`)
+    ?.addEventListener("click", () => {
+      testProviderConnection(window).catch((error) => {
+        Services.prompt.alert(
+          window as any,
+          addon.data.config.addonName,
+          `${getString("provider-test-failed")}: ${toErrorMessage(error)}`,
+        );
+      });
+    });
+
+  doc
+    .querySelector(`#${config.addonRef}-restore-prompts`)
+    ?.addEventListener("click", () => {
+      setPref("systemPrompt", DEFAULT_SYSTEM_PROMPT);
+      setPref("userPrompt", DEFAULT_USER_PROMPT);
+
+      const systemPromptInput = doc.querySelector(
+        `#zotero-prefpane-${config.addonRef}-systemPrompt`,
+      ) as HTMLTextAreaElement | null;
+      const userPromptInput = doc.querySelector(
+        `#zotero-prefpane-${config.addonRef}-userPrompt`,
+      ) as HTMLTextAreaElement | null;
+
+      if (systemPromptInput) {
+        systemPromptInput.value = DEFAULT_SYSTEM_PROMPT;
       }
-      return true;
-    })
-    // For find-as-you-type
-    .setProp(
-      "getRowString",
-      (index) => addon.data.prefs?.rows[index].title || "",
-    )
-    // Render the table.
-    .render(-1, () => {
-      renderLock.resolve();
+      if (userPromptInput) {
+        userPromptInput.value = DEFAULT_USER_PROMPT;
+      }
+
+      Services.prompt.alert(
+        window as any,
+        addon.data.config.addonName,
+        getString("prompt-restored"),
+      );
     });
-  await renderLock.promise;
-  ztoolkit.log("Preference table rendered!");
+
+  updateProviderSectionVisibility(window);
+  updateTagPolicySectionVisibility(window);
+  updateContextSectionVisibility(window);
 }
 
-function bindPrefEvents() {
-  addon.data
-    .prefs!.window.document?.querySelector(
-      `#zotero-prefpane-${config.addonRef}-enable`,
-    )
-    ?.addEventListener("command", (e: Event) => {
-      ztoolkit.log(e);
-      addon.data.prefs!.window.alert(
-        `Successfully changed to ${(e.target as XUL.Checkbox).checked}!`,
-      );
-    });
+function toErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
 
-  addon.data
-    .prefs!.window.document?.querySelector(
-      `#zotero-prefpane-${config.addonRef}-input`,
-    )
-    ?.addEventListener("change", (e: Event) => {
-      ztoolkit.log(e);
-      addon.data.prefs!.window.alert(
-        `Successfully changed to ${(e.target as HTMLInputElement).value}!`,
-      );
-    });
+async function testProviderConnection(window: Window) {
+  const runtimeConfig = getRuntimeConfig();
+  const errors = validateRuntimeConfig(runtimeConfig);
+  if (errors.length > 0) {
+    Services.prompt.alert(
+      window as any,
+      addon.data.config.addonName,
+      errors.join("\n"),
+    );
+    return;
+  }
+
+  const messages = buildChatMessages(
+    runtimeConfig.prompt,
+    {
+      getTags: () => [],
+      getField: (field: string) =>
+        field === "title" ? "Provider connectivity test" : "",
+    } as unknown as Zotero.Item,
+    ["connection-test"],
+    {
+      ...runtimeConfig.tagging,
+      tagPolicy: "allow_new",
+      maxSuggestedTags: 1,
+      maxTokens: 100,
+      temperature: 0,
+      includeAttachmentText: false,
+      maxAttachmentChars: 0,
+    },
+  );
+
+  const content = await callProviderChat(
+    runtimeConfig.provider,
+    messages,
+    {
+      ...runtimeConfig.tagging,
+      tagPolicy: "allow_new",
+      maxSuggestedTags: 1,
+      maxTokens: 100,
+      temperature: 0,
+    },
+    ["connection-test"],
+  );
+  parseSuggestionResponse(content, ["connection-test"], "allow_new", 1);
+
+  Services.prompt.alert(
+    window as any,
+    addon.data.config.addonName,
+    getString("provider-test-success"),
+  );
+}
+
+function updateProviderSectionVisibility(window: Window) {
+  const doc = window.document;
+  const providerInput = doc.querySelector(
+    `#zotero-prefpane-${config.addonRef}-provider`,
+  ) as HTMLSelectElement | null;
+  const azureSection = doc.querySelector(
+    `#${config.addonRef}-provider-azure`,
+  ) as HTMLElement | null;
+  const openaiSection = doc.querySelector(
+    `#${config.addonRef}-provider-openai`,
+  ) as HTMLElement | null;
+
+  const provider = providerInput?.value || "openai";
+  const isAzure = provider === "azure";
+
+  if (azureSection) {
+    azureSection.style.display = isAzure ? "block" : "none";
+  }
+  if (openaiSection) {
+    openaiSection.style.display = isAzure ? "none" : "block";
+  }
+}
+
+function updateTagPolicySectionVisibility(window: Window) {
+  const doc = window.document;
+  const tagPolicyInput = doc.querySelector(
+    `#zotero-prefpane-${config.addonRef}-tagPolicy`,
+  ) as HTMLSelectElement | null;
+  const customListRow = doc.querySelector(
+    `#${config.addonRef}-custom-tag-list-row`,
+  ) as HTMLElement | null;
+
+  const tagPolicy =
+    tagPolicyInput?.value ||
+    (getPref("tagPolicy") as string) ||
+    "existing_only";
+  const showCustomList = tagPolicy === "custom_list";
+
+  if (customListRow) {
+    customListRow.style.display = showCustomList ? "flex" : "none";
+  }
+
+  // Preference binding may apply value after onload; run one extra tick.
+  window.setTimeout(() => {
+    const latePolicy =
+      (tagPolicyInput?.value as string) ||
+      (getPref("tagPolicy") as string) ||
+      "existing_only";
+    if (customListRow) {
+      customListRow.style.display =
+        latePolicy === "custom_list" ? "flex" : "none";
+    }
+  }, 0);
+}
+
+function updateContextSectionVisibility(window: Window) {
+  const doc = window.document;
+  const includeAttachmentTextInput = doc.querySelector(
+    `#zotero-prefpane-${config.addonRef}-includeAttachmentText`,
+  ) as CheckedElement | null;
+  const maxAttachmentCharsRow = doc.querySelector(
+    `#${config.addonRef}-max-attachment-chars-row`,
+  ) as HTMLElement | null;
+
+  const includeAttachmentText =
+    includeAttachmentTextInput == null
+      ? Boolean(getPref("includeAttachmentText"))
+      : Boolean(includeAttachmentTextInput.checked);
+
+  if (maxAttachmentCharsRow) {
+    maxAttachmentCharsRow.style.display = includeAttachmentText
+      ? "flex"
+      : "none";
+  }
+
+  window.setTimeout(() => {
+    const lateInclude =
+      includeAttachmentTextInput == null
+        ? Boolean(getPref("includeAttachmentText"))
+        : Boolean(includeAttachmentTextInput.checked);
+    if (maxAttachmentCharsRow) {
+      maxAttachmentCharsRow.style.display = lateInclude ? "flex" : "none";
+    }
+  }, 0);
 }
