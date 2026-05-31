@@ -20,13 +20,10 @@ declare namespace _ZoteroTypes {
       "maxSuggestedTags": number;
       "temperature": string;
       "maxTokens": number;
-      "includeAttachmentText": boolean;
-      "maxAttachmentChars": number;
       "maxConcurrency": number;
       "minRequestIntervalMs": number;
       "maxRetries": number;
-      "systemPrompt": string;
-      "userPrompt": string;
+      "prompt": string;
     };
   }
 }

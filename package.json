@@ -2,7 +2,7 @@
   "name": "zotero-ai-tagger",
   "type": "module",
   "version": "0.1.0",
-  "description": "AI-assisted tag suggestion plugin for Zotero with OpenAI, Azure OpenAI, and compatible providers",
+  "description": "AI-assisted tag suggestion plugin",
   "config": {
     "addonName": "AI Tagger",
     "addonID": "ai-tagger@zotero.dev",

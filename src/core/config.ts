@@ -9,6 +9,7 @@ import {
 import { ApplyMode, ProviderType, RuntimeConfig, TagPolicy } from "./types";
 import { getPref } from "../utils/prefs";
 import { parseCommaSeparatedTags } from "./tagList";
+import { getEffectivePromptText } from "./promptMigration";
 
 function toInt(value: unknown, fallback: number, min: number, max: number) {
   const parsed = Number(value);
@@ -21,15 +22,6 @@ function toFloat(value: unknown, fallback: number, min: number, max: number) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return fallback;
   return Math.max(min, Math.min(max, parsed));
-}
-
-function toBool(value: unknown, fallback: boolean) {
-  if (typeof value === "boolean") return value;
-  if (typeof value === "string") {
-    if (value === "true") return true;
-    if (value === "false") return false;
-  }
-  return fallback;
 }
 
 export function getRuntimeConfig(): RuntimeConfig {
@@ -56,8 +48,7 @@ export function getRuntimeConfig(): RuntimeConfig {
       ).trim(),
     },
     prompt: {
-      systemPrompt: getPref("systemPrompt") || DEFAULT_PROMPT.systemPrompt,
-      userPrompt: getPref("userPrompt") || DEFAULT_PROMPT.userPrompt,
+      prompt: getEffectivePromptText() || DEFAULT_PROMPT.prompt,
     },
     tagging: {
       tagPolicy,
@@ -83,16 +74,6 @@ export function getRuntimeConfig(): RuntimeConfig {
         64,
         4096,
       ),
-      includeAttachmentText: toBool(
-        getPref("includeAttachmentText"),
-        DEFAULT_TAGGING.includeAttachmentText,
-      ),
-      maxAttachmentChars: toInt(
-        getPref("maxAttachmentChars"),
-        DEFAULT_TAGGING.maxAttachmentChars,
-        0,
-        50000,
-      ),
     },
     queue: {
       maxConcurrency: toInt(
@@ -116,11 +97,8 @@ export function validateRuntimeConfig(config: RuntimeConfig): string[] {
   const errors: string[] = [];
   const { provider, prompt } = config;
 
-  if (!prompt.systemPrompt || prompt.systemPrompt.trim().length < 10) {
-    errors.push("System prompt is too short.");
-  }
-  if (!prompt.userPrompt || prompt.userPrompt.trim().length < 10) {
-    errors.push("User prompt is too short.");
+  if (!prompt.prompt || prompt.prompt.trim().length < 10) {
+    errors.push("Prompt is too short.");
   }
 
   if (!provider.apiKey) {

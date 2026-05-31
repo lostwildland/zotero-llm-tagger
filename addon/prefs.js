@@ -12,18 +12,12 @@ pref("customTagList", "");
 pref("maxSuggestedTags", 8);
 pref("temperature", "0.1");
 pref("maxTokens", 1000);
-pref("includeAttachmentText", false);
-pref("maxAttachmentChars", 6000);
 
 pref("maxConcurrency", 3);
 pref("minRequestIntervalMs", 800);
 pref("maxRetries", 3);
 
 pref(
-  "systemPrompt",
-  "You are a research librarian helping categorize academic documents. Return strict JSON only.",
-);
-pref(
-  "userPrompt",
+  "prompt",
   "Analyze the provided document context and suggest concise, accurate tags.",
 );

@@ -136,15 +136,43 @@
 
     <hbox id="__addonRef__-custom-tag-list-row" align="start">
       <html:label
-        for="zotero-prefpane-__addonRef__-customTagList"
+        for="__addonRef__-custom-tag-list"
         data-l10n-id="pref-custom-tag-list"
       ></html:label>
       <vbox flex="1">
+        <html:div
+          id="__addonRef__-custom-tag-list"
+          role="listbox"
+          aria-multiselectable="true"
+          tabindex="0"
+          style="
+            background: #fff;
+            border: 1px solid #c8c8c8;
+            box-sizing: border-box;
+            height: 12em;
+            max-height: 12em;
+            overflow-y: auto;
+            width: 100%;
+          "
+        ></html:div>
+        <hbox align="center" style="gap: 6px; margin-top: 6px">
+          <html:button
+            id="__addonRef__-custom-tag-add"
+            type="button"
+            data-l10n-id="pref-custom-tag-add"
+          ></html:button>
+          <html:button
+            id="__addonRef__-custom-tag-delete"
+            type="button"
+            disabled="disabled"
+            data-l10n-id="pref-custom-tag-delete"
+          ></html:button>
+        </hbox>
         <html:textarea
           id="zotero-prefpane-__addonRef__-customTagList"
           preference="customTagList"
           rows="3"
-          style="width: 100%"
+          style="display: none"
         ></html:textarea>
         <description data-l10n-id="pref-custom-tag-list-help"></description>
       </vbox>
@@ -214,35 +242,6 @@
     </hbox>
   </vbox>
 
-  <separator class="thin" />
-
-  <vbox>
-    <label><html:h3 data-l10n-id="pref-context-title"></html:h3></label>
-
-    <checkbox
-      id="zotero-prefpane-__addonRef__-includeAttachmentText"
-      preference="includeAttachmentText"
-      data-l10n-id="pref-include-attachment-text"
-    />
-    <description data-l10n-id="pref-include-attachment-text-help"></description>
-
-    <hbox id="__addonRef__-max-attachment-chars-row" align="center">
-      <html:label
-        for="zotero-prefpane-__addonRef__-maxAttachmentChars"
-        data-l10n-id="pref-max-attachment-chars"
-      ></html:label>
-      <html:input
-        type="number"
-        min="0"
-        max="50000"
-        id="zotero-prefpane-__addonRef__-maxAttachmentChars"
-        preference="maxAttachmentChars"
-      ></html:input>
-    </hbox>
-  </vbox>
-
-  <separator class="thin" />
-
   <vbox>
     <label><html:h3 data-l10n-id="pref-queue-title"></html:h3></label>
 
@@ -295,31 +294,20 @@
     <label><html:h3 data-l10n-id="pref-prompt-title"></html:h3></label>
 
     <html:label
-      for="zotero-prefpane-__addonRef__-systemPrompt"
-      data-l10n-id="pref-system-prompt"
+      for="zotero-prefpane-__addonRef__-prompt"
+      data-l10n-id="pref-prompt"
     ></html:label>
     <html:textarea
-      id="zotero-prefpane-__addonRef__-systemPrompt"
-      preference="systemPrompt"
-      rows="4"
-      style="width: 100%"
-    ></html:textarea>
-
-    <html:label
-      for="zotero-prefpane-__addonRef__-userPrompt"
-      data-l10n-id="pref-user-prompt"
-    ></html:label>
-    <html:textarea
-      id="zotero-prefpane-__addonRef__-userPrompt"
-      preference="userPrompt"
-      rows="4"
+      id="zotero-prefpane-__addonRef__-prompt"
+      preference="prompt"
+      rows="8"
       style="width: 100%"
     ></html:textarea>
 
     <html:button
-      id="__addonRef__-restore-prompts"
+      id="__addonRef__-restore-prompt"
       type="button"
-      data-l10n-id="pref-restore-prompts"
+      data-l10n-id="pref-restore-prompt"
     ></html:button>
     <description data-l10n-id="pref-prompt-help"></description>
   </vbox>

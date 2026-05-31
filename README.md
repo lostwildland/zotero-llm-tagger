@@ -22,7 +22,7 @@
   - 先预览后写入
 - 队列处理：可配置并发、请求间隔、失败重试
 - 文献上下文：默认使用元数据；可选择附加 Zotero 已索引的 PDF / 网页快照正文片段
-- 提示词设置：全局 `System Prompt` / `User Prompt`（基础版，不支持模板变量）
+- 提示词设置：全局 `Prompt`（基础版，不支持模板变量）
 - 复古未来主义 SVG logo 已作为插件图标与设置页图标使用
 - 中英文界面（zh-CN / en-US）
 
@@ -106,13 +106,13 @@ This is a native Zotero 7 plugin that suggests and applies tags with LLMs from i
 - Tag policy:
   - existing tags only
   - allow new tags (new tags require confirmation by default)
-  - custom tag list only (comma-separated user input)
+  - custom tag list only (editable tag list stored in the existing string preference)
 - Apply mode:
   - auto apply
   - preview then apply
 - Queue controls: concurrency, request interval, retries
-- Document context: metadata by default, with optional Zotero-indexed PDF/snapshot text excerpts
-- Prompt settings: global `System Prompt` and `User Prompt` (basic mode, no template variables)
+- Document context based on Zotero item metadata
+- Prompt settings: global `Prompt` (basic mode, no template variables)
 - Retro-futurist SVG logo used for the plugin and preferences pane
 - Bilingual UI: zh-CN / en-US
 
@@ -148,10 +148,9 @@ Current default output example: `build/ai-tagger.xpi`
 
 1. Configure API settings in `Edit -> Preferences -> AI Tagger`
 2. Use `Test Connection` to verify provider, model, and API key settings
-3. Optionally enable indexed attachment text for richer topic detection
-4. Select one or more items in Zotero library
-5. Right click -> run batch tag suggestion
-6. Monitor progress and apply results according to your mode
+3. Select one or more items in Zotero library
+4. Right click -> run batch tag suggestion
+5. Monitor progress and apply results according to your mode
 
 ### Core settings
 
@@ -161,7 +160,6 @@ Current default output example: `build/ai-tagger.xpi`
   - Azure: `Endpoint + Deployment + API Version + API Key`
 - Tag policy `custom_list` uses a comma-separated tag list from preferences
 - Custom tag lists accept English commas, Chinese commas, semicolons, and line breaks
-- Attachment text is disabled by default; enabling it sends Zotero-indexed text excerpts to the selected provider
 - Queue defaults: concurrency `3`, interval `800ms`, retries `3`
 
 ### Dev commands

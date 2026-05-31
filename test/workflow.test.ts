@@ -33,8 +33,7 @@ describe("tag suggestion workflow", function () {
   it("builds context, parses provider JSON, and applies only immediate tags", async function () {
     const item = createMockItem();
     const prompt: PromptConfig = {
-      systemPrompt: "Return JSON only.",
-      userPrompt: "Suggest tags.",
+      prompt: "Suggest tags.",
     };
     const tagging: TaggingConfig = {
       tagPolicy: "allow_new",
@@ -43,18 +42,12 @@ describe("tag suggestion workflow", function () {
       maxSuggestedTags: 4,
       temperature: 0.1,
       maxTokens: 200,
-      includeAttachmentText: true,
-      maxAttachmentChars: 2000,
     };
 
-    const messages = buildChatMessages(
-      prompt,
-      item,
-      ["NLP", "RAG"],
-      tagging,
-      "Indexed attachment excerpt about retrieval pipelines.",
-    );
-    assert.include(messages[2].content, "Indexed attachment excerpt");
+    const messages = buildChatMessages(prompt, item, ["NLP", "RAG"], tagging);
+    assert.equal(messages[1].content, "Suggest tags.");
+    assert.include(messages[2].content, "Retrieval augmented generation");
+    assert.include(messages[2].content, "Return strict JSON");
 
     const parsed = parseSuggestionResponse(
       JSON.stringify({ tags: ["NLP", "RAG", "new-topic"], reasoning: "ok" }),

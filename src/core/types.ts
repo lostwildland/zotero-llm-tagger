@@ -7,8 +7,7 @@ export type TagPolicy = "existing_only" | "allow_new" | "custom_list";
 export type ApplyMode = "auto_apply" | "preview_then_apply";
 
 export interface PromptConfig {
-  systemPrompt: string;
-  userPrompt: string;
+  prompt: string;
 }
 
 export interface ProviderConfig {
@@ -29,8 +28,6 @@ export interface TaggingConfig {
   maxSuggestedTags: number;
   temperature: number;
   maxTokens: number;
-  includeAttachmentText: boolean;
-  maxAttachmentChars: number;
 }
 
 export interface QueueConfig {

@@ -5,11 +5,13 @@ export interface ChatMessage {
   content: string;
 }
 
+const SYSTEM_INSTRUCTIONS =
+  "You are a research librarian helping categorize academic documents.";
+
 export function buildDocumentContext(
   item: Zotero.Item,
   availableTags: string[],
   taggingConfig: TaggingConfig,
-  attachmentText = "",
 ): string {
   const currentTags = item
     .getTags()
@@ -21,7 +23,6 @@ export function buildDocumentContext(
     publicationTitle: item.getField("publicationTitle") || "",
     currentTags,
     availableTags,
-    attachmentText,
     maxSuggestedTags: taggingConfig.maxSuggestedTags,
     tagPolicy: taggingConfig.tagPolicy,
   };
@@ -33,7 +34,6 @@ export function buildDocumentContext(
     '1) Return strict JSON with shape: {"tags": string[], "reasoning": string}',
     "2) Never include fields other than tags and reasoning",
     "3) tags must contain unique strings only",
-    "4) attachmentText may be an excerpt; prefer stable topic/method tags over one-off details",
   ].join("\n");
 }
 
@@ -42,23 +42,17 @@ export function buildChatMessages(
   item: Zotero.Item,
   availableTags: string[],
   taggingConfig: TaggingConfig,
-  attachmentText = "",
 ): ChatMessage[] {
-  const context = buildDocumentContext(
-    item,
-    availableTags,
-    taggingConfig,
-    attachmentText,
-  );
+  const context = buildDocumentContext(item, availableTags, taggingConfig);
 
   return [
     {
       role: "system",
-      content: prompt.systemPrompt,
+      content: SYSTEM_INSTRUCTIONS,
     },
     {
       role: "user",
-      content: prompt.userPrompt,
+      content: prompt.prompt,
     },
     {
       role: "user",

@@ -11,7 +11,6 @@ import { parseSuggestionResponse } from "../core/responseParser";
 import { normalizeSelectedItems } from "../core/selection";
 import { parseCommaSeparatedTags } from "../core/tagList";
 import { getAvailableLibraryTags } from "../core/tagRepository";
-import { getIndexedAttachmentText } from "../core/textExtractor";
 import { RuntimeConfig, SuggestionResult } from "../core/types";
 import { getString } from "../utils/locale";
 
@@ -88,16 +87,11 @@ async function processSingleItem(
     }
   }
 
-  const attachmentText = config.tagging.includeAttachmentText
-    ? await getIndexedAttachmentText(item, config.tagging.maxAttachmentChars)
-    : "";
-
   const messages = buildChatMessages(
     config.prompt,
     item,
     availableTags,
     config.tagging,
-    attachmentText,
   );
 
   await waitForRateLimit();

@@ -10,6 +10,7 @@ error-no-supported-item = 请至少选择一篇普通文献或带父条目的附
 error-no-available-tags = 当前文库没有可用标签。
 error-custom-tag-list-empty = 自定义标签列表为空。
 error-run-failed = 批量执行失败
+pref-custom-tag-add-prompt = 新标签或粘贴的标签列表：
 prompt-restored = 已恢复默认提示词。
 provider-test-success = Provider 连接成功。
 provider-test-failed = Provider 连接失败
