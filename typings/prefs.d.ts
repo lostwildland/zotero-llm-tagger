@@ -26,6 +26,7 @@ declare namespace _ZoteroTypes {
       "minRequestIntervalMs": number;
       "maxRetries": number;
       "prompt": string;
+      "promptProfiles": string;
     };
   }
 }

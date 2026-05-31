@@ -5,6 +5,7 @@ import {
   summarizeResultStats,
 } from "../core/applier";
 import { buildChatMessages } from "../core/promptBuilder";
+import { getPromptProfiles } from "../core/promptProfiles";
 import { callProviderChat } from "../core/providerClient";
 import { runConcurrentQueue } from "../core/queueRunner";
 import { parseSuggestionResponse } from "../core/responseParser";
@@ -161,8 +162,8 @@ async function applyDeferredResults(results: SuggestionResult[]) {
   }
 }
 
-export async function runTagSuggestionForSelectedItems() {
-  const config = getRuntimeConfig();
+export async function runTagSuggestionForSelectedItems(promptProfileId: string) {
+  const config = getRuntimeConfig(promptProfileId);
   const configErrors = validateRuntimeConfig(config);
 
   if (configErrors.length > 0) {
@@ -277,24 +278,51 @@ export async function runTagSuggestionForSelectedItems() {
 }
 
 export function registerTagSuggesterMenu() {
+  const popupId = `zotero-itemmenu-${addon.data.config.addonRef}-suggest-tags-popup`;
+
   ztoolkit.Menu.register("item", {
-    tag: "menuitem",
+    tag: "menu",
     id: `zotero-itemmenu-${addon.data.config.addonRef}-suggest-tags`,
+    popupId,
     label: getString("menuitem-suggest-tags"),
-    commandListener: async () => {
-      try {
-        await runTagSuggestionForSelectedItems();
-      } catch (error) {
+    children: [
+      {
+        tag: "menuitem",
+        id: `zotero-itemmenu-${addon.data.config.addonRef}-suggest-tags-default`,
+        label: getString("prompt-profile-default-name"),
+      },
+    ],
+  });
+
+  const popup = ztoolkit.getGlobal("document").querySelector(`#${popupId}`);
+  popup?.addEventListener("popupshowing", () => {
+    populatePromptProfileMenu(popup as XUL.MenuPopup);
+  });
+
+  registerBatchTagDeletionMenu();
+}
+
+function populatePromptProfileMenu(popup: XUL.MenuPopup) {
+  const doc = popup.ownerDocument || ztoolkit.getGlobal("document");
+  popup.replaceChildren();
+
+  for (const profile of getPromptProfiles()) {
+    const menuItem = createMenuItem(
+      doc,
+      profile.builtIn ? getString("prompt-profile-default-name") : profile.name,
+      false,
+    );
+    menuItem.addEventListener("command", () => {
+      runTagSuggestionForSelectedItems(profile.id).catch((error) => {
         Zotero.alert(
           Zotero.getMainWindow(),
           addon.data.config.addonName,
           `${getString("error-run-failed")}: ${toErrorMessage(error)}`,
         );
-      }
-    },
-  });
-
-  registerBatchTagDeletionMenu();
+      });
+    });
+    popup.append(menuItem);
+  }
 }
 
 function registerBatchTagDeletionMenu() {
@@ -332,7 +360,7 @@ function populateBatchTagDeletionMenu(popup: XUL.MenuPopup) {
 
   if (tagUsage.length === 0) {
     popup.append(
-      createDeleteTagMenuItem(
+      createMenuItem(
         doc,
         getString("menuitem-delete-tags-empty"),
         true,
@@ -342,7 +370,7 @@ function populateBatchTagDeletionMenu(popup: XUL.MenuPopup) {
   }
 
   for (const usage of tagUsage) {
-    const menuItem = createDeleteTagMenuItem(
+    const menuItem = createMenuItem(
       doc,
       `${usage.tag} (${usage.count})`,
       false,
@@ -360,7 +388,7 @@ function populateBatchTagDeletionMenu(popup: XUL.MenuPopup) {
   }
 }
 
-function createDeleteTagMenuItem(
+function createMenuItem(
   doc: Document,
   label: string,
   disabled: boolean,

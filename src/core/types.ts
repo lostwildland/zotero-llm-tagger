@@ -10,6 +10,13 @@ export interface PromptConfig {
   prompt: string;
 }
 
+export interface PromptProfile {
+  id: string;
+  name: string;
+  prompt: string;
+  builtIn?: boolean;
+}
+
 export interface ProviderConfig {
   provider: ProviderType;
   apiMode: ApiMode;

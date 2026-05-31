@@ -313,22 +313,52 @@
   <vbox>
     <label><html:h3 data-l10n-id="pref-prompt-title"></html:h3></label>
 
+    <hbox align="center">
+      <html:label
+        for="__addonRef__-prompt-profile-select"
+        data-l10n-id="pref-prompt-profile"
+      ></html:label>
+      <html:select id="__addonRef__-prompt-profile-select"></html:select>
+    </hbox>
+
+    <hbox align="center" class="aitagger-prompt-profile-actions">
+      <html:button
+        id="__addonRef__-prompt-profile-new"
+        type="button"
+        data-l10n-id="pref-prompt-profile-new"
+      ></html:button>
+      <html:button
+        id="__addonRef__-prompt-profile-rename"
+        type="button"
+        data-l10n-id="pref-prompt-profile-rename"
+      ></html:button>
+      <html:button
+        id="__addonRef__-prompt-profile-duplicate"
+        type="button"
+        data-l10n-id="pref-prompt-profile-duplicate"
+      ></html:button>
+      <html:button
+        id="__addonRef__-prompt-profile-delete"
+        type="button"
+        data-l10n-id="pref-prompt-profile-delete"
+      ></html:button>
+    </hbox>
+
     <html:label
-      for="zotero-prefpane-__addonRef__-prompt"
-      data-l10n-id="pref-prompt"
+      for="__addonRef__-prompt-profile-prompt"
+      data-l10n-id="pref-prompt-profile-prompt"
     ></html:label>
     <html:textarea
-      id="zotero-prefpane-__addonRef__-prompt"
-      preference="prompt"
+      id="__addonRef__-prompt-profile-prompt"
       rows="8"
       style="width: 100%"
     ></html:textarea>
-
-    <html:button
-      id="__addonRef__-restore-prompt"
-      type="button"
-      data-l10n-id="pref-restore-prompt"
-    ></html:button>
+    <html:textarea
+      id="zotero-prefpane-__addonRef__-promptProfiles"
+      preference="promptProfiles"
+      rows="1"
+      style="display: none"
+    ></html:textarea>
     <description data-l10n-id="pref-prompt-help"></description>
   </vbox>
 </groupbox>

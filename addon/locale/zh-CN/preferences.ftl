@@ -35,8 +35,14 @@ pref-retries = 最大重试次数
 
 pref-prompt-title = 提示词设置
 pref-prompt = Prompt
+pref-prompt-profile = 提示词方案
+pref-prompt-profile-new = 新建
+pref-prompt-profile-rename = 重命名
+pref-prompt-profile-duplicate = 复制
+pref-prompt-profile-delete = 删除
+pref-prompt-profile-prompt = Prompt
 pref-restore-prompt = 恢复默认提示词
-pref-prompt-help = 提示词为全局配置，当前不支持模板变量。
+pref-prompt-help = 内置默认提示词为只读；复制后可创建可编辑方案。
 pref-prompt-restored = 已恢复默认提示词。
 
 pref-help = { $name } Build { $version } { $time }

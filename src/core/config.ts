@@ -9,7 +9,11 @@ import {
 import { ApplyMode, ProviderType, RuntimeConfig, TagPolicy } from "./types";
 import { getPref } from "../utils/prefs";
 import { parseCommaSeparatedTags } from "./tagList";
-import { getEffectivePromptText } from "./promptMigration";
+import {
+  DEFAULT_PROMPT_PROFILE_ID,
+  getPromptProfile,
+  toPromptConfig,
+} from "./promptProfiles";
 
 function toInt(value: unknown, fallback: number, min: number, max: number) {
   const parsed = Number(value);
@@ -24,11 +28,14 @@ function toFloat(value: unknown, fallback: number, min: number, max: number) {
   return Math.max(min, Math.min(max, parsed));
 }
 
-export function getRuntimeConfig(): RuntimeConfig {
+export function getRuntimeConfig(
+  promptProfileId = DEFAULT_PROMPT_PROFILE_ID,
+): RuntimeConfig {
   const provider = (getPref("provider") ||
     DEFAULT_PROVIDER.provider) as ProviderType;
   const tagPolicy = (getPref("tagPolicy") || DEFAULT_TAG_POLICY) as TagPolicy;
   const applyMode = (getPref("applyMode") || DEFAULT_APPLY_MODE) as ApplyMode;
+  const promptProfile = getPromptProfile(promptProfileId);
 
   return {
     provider: {
@@ -47,9 +54,7 @@ export function getRuntimeConfig(): RuntimeConfig {
         getPref("azureApiVersion") || DEFAULT_PROVIDER.azureApiVersion
       ).trim(),
     },
-    prompt: {
-      prompt: getEffectivePromptText() || DEFAULT_PROMPT.prompt,
-    },
+    prompt: toPromptConfig(promptProfile) || DEFAULT_PROMPT,
     tagging: {
       tagPolicy,
       applyMode,
@@ -101,6 +106,23 @@ export function validateRuntimeConfig(config: RuntimeConfig): string[] {
     errors.push("Prompt is too short.");
   }
 
+  errors.push(...validateProviderConfig(provider));
+
+  if (
+    config.tagging.tagPolicy === "custom_list" &&
+    parseCommaSeparatedTags(config.tagging.customTagList).length === 0
+  ) {
+    errors.push("Custom tag list is empty.");
+  }
+
+  return errors;
+}
+
+export function validateProviderConfig(
+  provider: RuntimeConfig["provider"],
+): string[] {
+  const errors: string[] = [];
+
   if (!provider.apiKey) {
     errors.push("API key is required.");
   }
@@ -122,13 +144,6 @@ export function validateRuntimeConfig(config: RuntimeConfig): string[] {
     if (!provider.model) {
       errors.push("Model is required.");
     }
-  }
-
-  if (
-    config.tagging.tagPolicy === "custom_list" &&
-    parseCommaSeparatedTags(config.tagging.customTagList).length === 0
-  ) {
-    errors.push("Custom tag list is empty.");
   }
 
   return errors;

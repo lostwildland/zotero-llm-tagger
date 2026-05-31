@@ -35,8 +35,14 @@ pref-retries = Max Retries
 
 pref-prompt-title = Prompt Settings
 pref-prompt = Prompt
+pref-prompt-profile = Prompt Profile
+pref-prompt-profile-new = New
+pref-prompt-profile-rename = Rename
+pref-prompt-profile-duplicate = Duplicate
+pref-prompt-profile-delete = Delete
+pref-prompt-profile-prompt = Prompt
 pref-restore-prompt = Restore Default Prompt
-pref-prompt-help = Prompt customization is global and does not support template variables.
+pref-prompt-help = The built-in default prompt is read-only. Duplicate it to create an editable profile.
 pref-prompt-restored = Prompt restored to default.
 
 pref-help = { $name } Build { $version } { $time }

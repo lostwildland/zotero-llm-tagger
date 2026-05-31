@@ -23,3 +23,4 @@ pref(
   "prompt",
   "Analyze the provided document context and suggest concise, accurate tags.",
 );
+pref("promptProfiles", "[]");

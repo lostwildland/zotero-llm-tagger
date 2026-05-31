@@ -34,3 +34,8 @@
   gap: 6px;
   margin-top: 6px;
 }
+
+.aitagger-prompt-profile-actions {
+  gap: 6px;
+  margin: 6px 0;
+}

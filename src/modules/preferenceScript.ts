@@ -1,11 +1,22 @@
 import { config } from "../../package.json";
-import { getRuntimeConfig, validateRuntimeConfig } from "../core/config";
-import { DEFAULT_PROMPT_TEXT } from "../core/defaults";
+import {
+  getRuntimeConfig,
+  validateProviderConfig,
+  validateRuntimeConfig,
+} from "../core/config";
 import { buildChatMessages } from "../core/promptBuilder";
-import { migratePromptPreference } from "../core/promptMigration";
+import {
+  createPromptProfile,
+  DEFAULT_PROMPT_PROFILE_ID,
+  getPromptProfile,
+  getPromptProfiles,
+  isDefaultPromptProfile,
+  serializeStoredPromptProfiles,
+} from "../core/promptProfiles";
 import { callProviderChat } from "../core/providerClient";
 import { parseSuggestionResponse } from "../core/responseParser";
 import { parseCommaSeparatedTags } from "../core/tagList";
+import { PromptProfile } from "../core/types";
 import { refreshTagsColumn } from "./tagColumn";
 import { getString } from "../utils/locale";
 import { getPref, setPref } from "../utils/prefs";
@@ -42,7 +53,7 @@ export async function registerPrefsScripts(window: Window) {
     updateProviderSectionVisibility(window);
     updateTagPolicySectionVisibility(window);
     syncCustomTagListEditor(window);
-    syncPromptEditor(window);
+    syncPromptProfileEditor(window);
   }
 }
 
@@ -73,7 +84,7 @@ function bindPrefEvents(window: Window) {
   }
 
   bindCustomTagListEditor(window);
-  syncPromptEditor(window);
+  bindPromptProfileEditor(window);
 
   doc
     .querySelector(`#${config.addonRef}-test-connection`)
@@ -87,30 +98,10 @@ function bindPrefEvents(window: Window) {
       });
     });
 
-  doc
-    .querySelector(`#${config.addonRef}-restore-prompt`)
-    ?.addEventListener("click", () => {
-      setPref("prompt", DEFAULT_PROMPT_TEXT);
-
-      const promptInput = doc.querySelector(
-        `#zotero-prefpane-${config.addonRef}-prompt`,
-      ) as HTMLTextAreaElement | null;
-
-      if (promptInput) {
-        promptInput.value = DEFAULT_PROMPT_TEXT;
-      }
-
-      Services.prompt.alert(
-        window as any,
-        addon.data.config.addonName,
-        getString("prompt-restored"),
-      );
-    });
-
   updateProviderSectionVisibility(window);
   updateTagPolicySectionVisibility(window);
   syncCustomTagListEditor(window);
-  syncPromptEditor(window);
+  syncPromptProfileEditor(window);
 }
 
 function toErrorMessage(error: unknown): string {
@@ -118,20 +109,9 @@ function toErrorMessage(error: unknown): string {
   return String(error);
 }
 
-function syncPromptEditor(window: Window) {
-  const promptInput = window.document.querySelector(
-    `#zotero-prefpane-${config.addonRef}-prompt`,
-  ) as HTMLTextAreaElement | null;
-  const prompt = migratePromptPreference();
-
-  if (promptInput && promptInput.value !== prompt) {
-    promptInput.value = prompt;
-  }
-}
-
 async function testProviderConnection(window: Window) {
-  const runtimeConfig = getRuntimeConfig();
-  const errors = validateRuntimeConfig(runtimeConfig);
+  const runtimeConfig = getRuntimeConfig(DEFAULT_PROMPT_PROFILE_ID);
+  const errors = validateProviderConfig(runtimeConfig.provider);
   if (errors.length > 0) {
     Services.prompt.alert(
       window as any,
@@ -234,6 +214,272 @@ function updateTagPolicySectionVisibility(window: Window) {
     }
     syncCustomTagListEditor(window);
   }, 0);
+}
+
+function bindPromptProfileEditor(window: Window) {
+  const doc = window.document;
+  const select = getPromptProfileSelect(window);
+  const promptInput = getPromptProfilePromptInput(window);
+
+  select?.addEventListener("change", () => {
+    syncPromptProfileEditor(window, select.value);
+  });
+  promptInput?.addEventListener("input", () => {
+    persistCurrentPromptProfileText(window);
+  });
+
+  doc
+    .querySelector(`#${config.addonRef}-prompt-profile-new`)
+    ?.addEventListener("click", () => createPromptProfileFromInput(window));
+  doc
+    .querySelector(`#${config.addonRef}-prompt-profile-rename`)
+    ?.addEventListener("click", () => renameCurrentPromptProfile(window));
+  doc
+    .querySelector(`#${config.addonRef}-prompt-profile-duplicate`)
+    ?.addEventListener("click", () => duplicateCurrentPromptProfile(window));
+  doc
+    .querySelector(`#${config.addonRef}-prompt-profile-delete`)
+    ?.addEventListener("click", () => deleteCurrentPromptProfile(window));
+
+  syncPromptProfileEditor(window);
+}
+
+function syncPromptProfileEditor(window: Window, selectedProfileId?: string) {
+  const select = getPromptProfileSelect(window);
+  const promptInput = getPromptProfilePromptInput(window);
+  if (!select || !promptInput) return;
+
+  const profiles = getPromptProfiles();
+  const nextSelectedId =
+    selectedProfileId ||
+    select.value ||
+    profiles[0]?.id ||
+    DEFAULT_PROMPT_PROFILE_ID;
+  const selectedProfile =
+    profiles.find((profile) => profile.id === nextSelectedId) || profiles[0];
+
+  select.replaceChildren(
+    ...profiles.map((profile) => {
+      const option = window.document.createElementNS(
+        htmlNS,
+        "option",
+      ) as HTMLOptionElement;
+      option.value = profile.id;
+      option.textContent = profile.builtIn
+        ? getString("prompt-profile-default-name")
+        : profile.name;
+      return option;
+    }),
+  );
+
+  if (selectedProfile) {
+    select.value = selectedProfile.id;
+    promptInput.value = selectedProfile.prompt;
+    promptInput.disabled = isDefaultPromptProfile(selectedProfile);
+  }
+
+  updatePromptProfileButtons(window, selectedProfile);
+  syncPromptProfilesHiddenInput(window, profiles);
+}
+
+function persistCurrentPromptProfileText(window: Window) {
+  const select = getPromptProfileSelect(window);
+  const promptInput = getPromptProfilePromptInput(window);
+  if (!select || !promptInput) return;
+
+  const profiles = getPromptProfiles();
+  const profile = profiles.find((entry) => entry.id === select.value);
+  if (!profile || isDefaultPromptProfile(profile)) return;
+
+  profile.prompt = promptInput.value;
+  persistPromptProfiles(window, profiles, profile.id);
+}
+
+function createPromptProfileFromInput(window: Window) {
+  const name = promptForProfileName(
+    window,
+    getString("prompt-profile-new-prompt"),
+    "",
+  );
+  if (!name) return;
+
+  const profiles = getPromptProfiles();
+  if (hasPromptProfileName(profiles, name)) {
+    alertPromptProfileNameExists(window);
+    return;
+  }
+
+  const profile = createPromptProfile(name);
+  profiles.push(profile);
+  persistPromptProfiles(window, profiles, profile.id);
+}
+
+function renameCurrentPromptProfile(window: Window) {
+  const profile = getCurrentPromptProfile(window);
+  if (!profile || isDefaultPromptProfile(profile)) return;
+
+  const name = promptForProfileName(
+    window,
+    getString("prompt-profile-rename-prompt"),
+    profile.name,
+  );
+  if (!name || name === profile.name) return;
+
+  const profiles = getPromptProfiles();
+  if (hasPromptProfileName(profiles, name, profile.id)) {
+    alertPromptProfileNameExists(window);
+    return;
+  }
+
+  const target = profiles.find((entry) => entry.id === profile.id);
+  if (!target) return;
+  target.name = name;
+  persistPromptProfiles(window, profiles, target.id);
+}
+
+function duplicateCurrentPromptProfile(window: Window) {
+  const profile = getCurrentPromptProfile(window);
+  if (!profile) return;
+
+  const name = promptForProfileName(
+    window,
+    getString("prompt-profile-duplicate-prompt"),
+    `${profile.name} Copy`,
+  );
+  if (!name) return;
+
+  const profiles = getPromptProfiles();
+  if (hasPromptProfileName(profiles, name)) {
+    alertPromptProfileNameExists(window);
+    return;
+  }
+
+  const duplicate = createPromptProfile(name, profile.prompt);
+  profiles.push(duplicate);
+  persistPromptProfiles(window, profiles, duplicate.id);
+}
+
+function deleteCurrentPromptProfile(window: Window) {
+  const profile = getCurrentPromptProfile(window);
+  if (!profile || isDefaultPromptProfile(profile)) return;
+
+  const confirmed = Services.prompt.confirm(
+    window as any,
+    addon.data.config.addonName,
+    getString("prompt-profile-delete-confirm", {
+      args: { name: profile.name },
+    }),
+  );
+  if (!confirmed) return;
+
+  const profiles = getPromptProfiles().filter(
+    (entry) => entry.id !== profile.id,
+  );
+  persistPromptProfiles(window, profiles, DEFAULT_PROMPT_PROFILE_ID);
+}
+
+function persistPromptProfiles(
+  window: Window,
+  profiles: PromptProfile[],
+  selectedProfileId: string,
+) {
+  setPref("promptProfiles", serializeStoredPromptProfiles(profiles));
+  syncPromptProfileEditor(window, selectedProfileId);
+}
+
+function syncPromptProfilesHiddenInput(
+  window: Window,
+  profiles: PromptProfile[],
+) {
+  const hiddenInput = getPromptProfilesHiddenInput(window);
+  if (!hiddenInput) return;
+
+  const value = serializeStoredPromptProfiles(profiles);
+  if (hiddenInput.value === value) return;
+  hiddenInput.value = value;
+  hiddenInput.dispatchEvent(new window.Event("change", { bubbles: true }));
+}
+
+function getCurrentPromptProfile(window: Window) {
+  const select = getPromptProfileSelect(window);
+  if (!select) return null;
+  return getPromptProfile(select.value);
+}
+
+function promptForProfileName(
+  window: Window,
+  message: string,
+  initialValue: string,
+): string {
+  const input = { value: initialValue };
+  const accepted = (Services.prompt as any).prompt(
+    window as any,
+    addon.data.config.addonName,
+    message,
+    input,
+    null,
+    {},
+  );
+  return accepted ? input.value.trim() : "";
+}
+
+function hasPromptProfileName(
+  profiles: PromptProfile[],
+  name: string,
+  ignoredProfileId?: string,
+) {
+  const normalizedName = name.trim().toLocaleLowerCase();
+  return profiles.some(
+    (profile) =>
+      profile.id !== ignoredProfileId &&
+      profile.name.trim().toLocaleLowerCase() === normalizedName,
+  );
+}
+
+function alertPromptProfileNameExists(window: Window) {
+  Services.prompt.alert(
+    window as any,
+    addon.data.config.addonName,
+    getString("prompt-profile-name-exists"),
+  );
+}
+
+function updatePromptProfileButtons(
+  window: Window,
+  profile: PromptProfile | undefined,
+) {
+  const isBuiltIn = !profile || isDefaultPromptProfile(profile);
+  const renameButton = window.document.querySelector(
+    `#${config.addonRef}-prompt-profile-rename`,
+  ) as HTMLButtonElement | null;
+  const duplicateButton = window.document.querySelector(
+    `#${config.addonRef}-prompt-profile-duplicate`,
+  ) as HTMLButtonElement | null;
+  const deleteButton = window.document.querySelector(
+    `#${config.addonRef}-prompt-profile-delete`,
+  ) as HTMLButtonElement | null;
+
+  if (renameButton) renameButton.disabled = isBuiltIn;
+  if (duplicateButton) duplicateButton.disabled = !profile;
+  if (deleteButton) deleteButton.disabled = isBuiltIn;
+}
+
+function getPromptProfileSelect(window: Window) {
+  return window.document.querySelector(
+    `#${config.addonRef}-prompt-profile-select`,
+  ) as HTMLSelectElement | null;
+}
+
+function getPromptProfilePromptInput(window: Window) {
+  return window.document.querySelector(
+    `#${config.addonRef}-prompt-profile-prompt`,
+  ) as HTMLTextAreaElement | null;
+}
+
+function getPromptProfilesHiddenInput(window: Window) {
+  return window.document.querySelector(
+    `#zotero-prefpane-${config.addonRef}-promptProfiles`,
+  ) as HTMLTextAreaElement | null;
 }
 
 function bindCustomTagListEditor(window: Window) {
