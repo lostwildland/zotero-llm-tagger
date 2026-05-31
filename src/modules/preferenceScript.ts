@@ -477,17 +477,6 @@ function applyCustomTagSelection(window: Window) {
     const element = row as HTMLElement;
     const selected = selectedTags.has(element.dataset.customTag || "");
     element.setAttribute("aria-selected", selected ? "true" : "false");
-    element.style.cssText = [
-      "cursor: grab",
-      "line-height: 1.6",
-      "overflow: hidden",
-      "padding: 3px 8px",
-      "text-overflow: ellipsis",
-      "user-select: none",
-      "white-space: nowrap",
-      selected ? "background: Highlight" : "background: transparent",
-      selected ? "color: HighlightText" : "color: inherit",
-    ].join("; ");
   }
 
   updateCustomTagDeleteButton(window);
@@ -496,6 +485,7 @@ function applyCustomTagSelection(window: Window) {
 function createCustomTagRow(window: Window, tag: string) {
   const row = window.document.createElementNS(htmlNS, "div") as HTMLDivElement;
   row.dataset.customTag = tag;
+  row.className = "aitagger-custom-tag-row";
   row.draggable = true;
   row.textContent = tag;
   row.title = tag;

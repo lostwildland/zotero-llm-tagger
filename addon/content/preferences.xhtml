@@ -1,5 +1,9 @@
 <linkset>
   <html:link rel="localization" href="__addonRef__-preferences.ftl" />
+  <html:link
+    rel="stylesheet"
+    href="chrome://__addonRef__/content/preferences.css"
+  />
 </linkset>
 <groupbox
   onload="Zotero.__addonInstance__.hooks.onPrefsEvent('load', { window })"
@@ -142,20 +146,12 @@
       <vbox flex="1">
         <html:div
           id="__addonRef__-custom-tag-list"
+          class="aitagger-custom-tag-list"
           role="listbox"
           aria-multiselectable="true"
           tabindex="0"
-          style="
-            background: #fff;
-            border: 1px solid #c8c8c8;
-            box-sizing: border-box;
-            height: 12em;
-            max-height: 12em;
-            overflow-y: auto;
-            width: 100%;
-          "
         ></html:div>
-        <hbox align="center" style="gap: 6px; margin-top: 6px">
+        <hbox align="center" class="aitagger-custom-tag-actions">
           <html:button
             id="__addonRef__-custom-tag-add"
             type="button"

@@ -1,0 +1,36 @@
+.aitagger-custom-tag-list {
+  background: Field;
+  border: 1px solid ThreeDShadow;
+  box-sizing: border-box;
+  color: FieldText;
+  height: 12em;
+  max-height: 12em;
+  overflow-y: auto;
+  width: 100%;
+}
+
+.aitagger-custom-tag-row {
+  background: transparent;
+  color: inherit;
+  cursor: grab;
+  line-height: 1.6;
+  overflow: hidden;
+  padding: 3px 8px;
+  text-overflow: ellipsis;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.aitagger-custom-tag-row[aria-selected="true"] {
+  background: Highlight;
+  color: HighlightText;
+}
+
+.aitagger-custom-tag-row:active {
+  cursor: grabbing;
+}
+
+.aitagger-custom-tag-actions {
+  gap: 6px;
+  margin-top: 6px;
+}
