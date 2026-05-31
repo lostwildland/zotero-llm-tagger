@@ -25,6 +25,8 @@ pref-apply-mode-preview = Preview Then Apply
 pref-max-tags = Max Suggested Tags
 pref-temperature = Temperature
 pref-max-tokens = Max Tokens
+pref-tag-column-background = Tags Column Background
+pref-tag-column-text = Tags Column Text
 
 pref-queue-title = Queue & Retry
 pref-concurrency = Max Concurrency

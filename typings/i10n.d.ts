@@ -42,6 +42,8 @@ export type FluentMessageId =
   | 'pref-queue-title'
   | 'pref-restore-prompt'
   | 'pref-retries'
+  | 'pref-tag-column-background'
+  | 'pref-tag-column-text'
   | 'pref-tag-policy'
   | 'pref-tag-policy-custom'
   | 'pref-tag-policy-existing'

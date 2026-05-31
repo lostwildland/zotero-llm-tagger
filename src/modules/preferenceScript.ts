@@ -6,6 +6,7 @@ import { migratePromptPreference } from "../core/promptMigration";
 import { callProviderChat } from "../core/providerClient";
 import { parseSuggestionResponse } from "../core/responseParser";
 import { parseCommaSeparatedTags } from "../core/tagList";
+import { refreshTagsColumn } from "./tagColumn";
 import { getString } from "../utils/locale";
 import { getPref, setPref } from "../utils/prefs";
 
@@ -53,6 +54,12 @@ function bindPrefEvents(window: Window) {
   const tagPolicyInput = doc.querySelector(
     `#zotero-prefpane-${config.addonRef}-tagPolicy`,
   ) as HTMLSelectElement | null;
+  const tagColumnColorInputs = [
+    `#zotero-prefpane-${config.addonRef}-tagColumnBackgroundColor`,
+    `#zotero-prefpane-${config.addonRef}-tagColumnTextColor`,
+  ]
+    .map((selector) => doc.querySelector(selector) as HTMLInputElement | null)
+    .filter((input): input is HTMLInputElement => Boolean(input));
 
   providerInput?.addEventListener("change", () => {
     updateProviderSectionVisibility(window);
@@ -60,6 +67,10 @@ function bindPrefEvents(window: Window) {
   tagPolicyInput?.addEventListener("change", () => {
     updateTagPolicySectionVisibility(window);
   });
+  for (const colorInput of tagColumnColorInputs) {
+    colorInput.addEventListener("change", () => refreshTagsColumn());
+    colorInput.addEventListener("input", () => refreshTagsColumn());
+  }
 
   bindCustomTagListEditor(window);
   syncPromptEditor(window);

@@ -20,6 +20,8 @@ declare namespace _ZoteroTypes {
       "maxSuggestedTags": number;
       "temperature": string;
       "maxTokens": number;
+      "tagColumnBackgroundColor": string;
+      "tagColumnTextColor": string;
       "maxConcurrency": number;
       "minRequestIntervalMs": number;
       "maxRetries": number;

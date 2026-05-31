@@ -1,4 +1,5 @@
 import { registerTagSuggesterMenu } from "./modules/tagSuggester";
+import { registerTagsColumn, unregisterTagsColumn } from "./modules/tagColumn";
 import {
   registerPreferencePane,
   registerPrefsScripts,
@@ -15,6 +16,7 @@ async function onStartup() {
   initLocale();
   registerPreferencePane();
   registerTagSuggesterMenu();
+  registerTagsColumn();
 
   addon.data.initialized = true;
 }
@@ -30,6 +32,7 @@ async function onMainWindowUnload(_win: Window): Promise<void> {
 }
 
 function onShutdown(): void {
+  unregisterTagsColumn();
   ztoolkit.unregisterAll();
   addon.data.alive = false;
   // @ts-expect-error - Plugin instance is not typed

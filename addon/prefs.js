@@ -12,6 +12,8 @@ pref("customTagList", "");
 pref("maxSuggestedTags", 8);
 pref("temperature", "0.1");
 pref("maxTokens", 1000);
+pref("tagColumnBackgroundColor", "#2f3f48");
+pref("tagColumnTextColor", "#7aa7b8");
 
 pref("maxConcurrency", 3);
 pref("minRequestIntervalMs", 800);

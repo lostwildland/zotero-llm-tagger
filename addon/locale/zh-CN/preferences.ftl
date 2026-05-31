@@ -25,6 +25,8 @@ pref-apply-mode-preview = 先预览后写入
 pref-max-tags = 最大建议标签数
 pref-temperature = 温度参数
 pref-max-tokens = 最大输出 Token
+pref-tag-column-background = Tags 列背景色
+pref-tag-column-text = Tags 列文字色
 
 pref-queue-title = 队列与重试
 pref-concurrency = 最大并发数
