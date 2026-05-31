@@ -9,10 +9,12 @@ import { callProviderChat } from "../core/providerClient";
 import { runConcurrentQueue } from "../core/queueRunner";
 import { parseSuggestionResponse } from "../core/responseParser";
 import { normalizeSelectedItems } from "../core/selection";
+import { collectTagUsage, deleteTagFromItems } from "../core/tagDeletion";
 import { parseCommaSeparatedTags } from "../core/tagList";
 import { getAvailableLibraryTags } from "../core/tagRepository";
 import { RuntimeConfig, SuggestionResult } from "../core/types";
 import { getString } from "../utils/locale";
+import { refreshTagsColumn } from "./tagColumn";
 
 function itemTitle(item: Zotero.Item) {
   return item.getField("title") || item.getDisplayTitle() || `#${item.id}`;
@@ -291,4 +293,123 @@ export function registerTagSuggesterMenu() {
       }
     },
   });
+
+  registerBatchTagDeletionMenu();
+}
+
+function registerBatchTagDeletionMenu() {
+  const popupId = `zotero-itemmenu-${addon.data.config.addonRef}-delete-tags-popup`;
+
+  ztoolkit.Menu.register("item", {
+    tag: "menu",
+    id: `zotero-itemmenu-${addon.data.config.addonRef}-delete-tags`,
+    popupId,
+    label: getString("menuitem-delete-tags"),
+    children: [
+      {
+        tag: "menuitem",
+        id: `zotero-itemmenu-${addon.data.config.addonRef}-delete-tags-empty`,
+        label: getString("menuitem-delete-tags-empty"),
+        disabled: true,
+      },
+    ],
+  });
+
+  const popup = ztoolkit.getGlobal("document").querySelector(`#${popupId}`);
+  popup?.addEventListener("popupshowing", () => {
+    populateBatchTagDeletionMenu(popup as XUL.MenuPopup);
+  });
+}
+
+function populateBatchTagDeletionMenu(popup: XUL.MenuPopup) {
+  const doc = popup.ownerDocument || ztoolkit.getGlobal("document");
+  popup.replaceChildren();
+
+  const items = normalizeSelectedItems(
+    ztoolkit.getGlobal("ZoteroPane").getSelectedItems(),
+  );
+  const tagUsage = collectTagUsage(items);
+
+  if (tagUsage.length === 0) {
+    popup.append(
+      createDeleteTagMenuItem(
+        doc,
+        getString("menuitem-delete-tags-empty"),
+        true,
+      ),
+    );
+    return;
+  }
+
+  for (const usage of tagUsage) {
+    const menuItem = createDeleteTagMenuItem(
+      doc,
+      `${usage.tag} (${usage.count})`,
+      false,
+    );
+    menuItem.addEventListener("command", () => {
+      runBatchTagDeletion(usage.tag).catch((error) => {
+        Zotero.alert(
+          Zotero.getMainWindow(),
+          addon.data.config.addonName,
+          `${getString("error-run-failed")}: ${toErrorMessage(error)}`,
+        );
+      });
+    });
+    popup.append(menuItem);
+  }
+}
+
+function createDeleteTagMenuItem(
+  doc: Document,
+  label: string,
+  disabled: boolean,
+) {
+  const xulDocument = doc as Document & {
+    createXULElement?: (tagName: string) => Element;
+  };
+  const menuItem = (xulDocument.createXULElement
+    ? xulDocument.createXULElement("menuitem")
+    : doc.createElement("menuitem")) as Element;
+  menuItem.setAttribute("label", label);
+  if (disabled) {
+    menuItem.setAttribute("disabled", "true");
+  }
+  return menuItem as XUL.MenuItem;
+}
+
+async function runBatchTagDeletion(tag: string) {
+  const items = normalizeSelectedItems(
+    ztoolkit.getGlobal("ZoteroPane").getSelectedItems(),
+  );
+  const matched = collectTagUsage(items).find((usage) => usage.tag === tag);
+
+  if (!matched) return;
+
+  const confirmed = promptConfirm(
+    addon.data.config.addonName,
+    getString("delete-tags-confirm", {
+      args: {
+        tag,
+        selected: items.length,
+        matched: matched.count,
+      },
+    }),
+  );
+  if (!confirmed) return;
+
+  const result = await deleteTagFromItems(items, tag);
+  refreshTagsColumn();
+
+  Zotero.alert(
+    Zotero.getMainWindow(),
+    addon.data.config.addonName,
+    getString("delete-tags-finish", {
+      args: {
+        tag,
+        saved: result.saved,
+        failed: result.failed,
+      },
+    }),
+  );
 }

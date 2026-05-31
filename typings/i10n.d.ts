@@ -3,6 +3,8 @@
 /* eslint-disable */
 // @ts-nocheck
 export type FluentMessageId =
+  | 'delete-tags-confirm'
+  | 'delete-tags-finish'
   | 'error-custom-tag-list-empty'
   | 'error-no-available-tags'
   | 'error-no-supported-item'
@@ -13,6 +15,8 @@ export type FluentMessageId =
   | 'item-section-example2-button-tooltip'
   | 'item-section-example2-head-text'
   | 'item-section-example2-sidenav-tooltip'
+  | 'menuitem-delete-tags'
+  | 'menuitem-delete-tags-empty'
   | 'menuitem-suggest-tags'
   | 'pref-api-key'
   | 'pref-apply-mode'
